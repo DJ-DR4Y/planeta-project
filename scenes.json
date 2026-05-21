@@ -1,0 +1,146 @@
+{
+  "ui": {
+    "systemFailure": {
+      "en": "SYSTEM FAILURE",
+      "fr": "DÉFAILLANCE SYSTÈME",
+      "es": "FALLO DEL SISTEMA"
+    },
+    "play": {
+      "en": "PLAY SIMULATION",
+      "fr": "LANCER LA SIMULATION",
+      "es": "INICIAR SIMULACIÓN"
+    },
+    "pause": {
+      "en": "PAUSE",
+      "fr": "PAUSE",
+      "es": "PAUSA"
+    },
+    "replay": {
+      "en": "REPLAY SIMULATION",
+      "fr": "REJOUER LA SIMULATION",
+      "es": "REPETIR SIMULACIÓN"
+    },
+    "restart": {
+      "en": "RESTART",
+      "fr": "RECOMMENCER",
+      "es": "REINICIAR"
+    },
+    "resume": {
+      "en": "RESUME",
+      "fr": "REPRENDRE",
+      "es": "REANUDAR"
+    },
+    "playNext": {
+      "en": "PLAY NEXT",
+      "fr": "SCÈNE SUIVANTE",
+      "es": "SIGUIENTE ESCENA"
+    },
+    "sectionTitle": {
+      "en": "The Sci-fi story (Condensed)",
+      "fr": "L'histoire sci-fi (condensée)",
+      "es": "La historia sci-fi (condensada)"
+    }
+  },
+  "scenes": [
+    {
+      "start": 0,
+      "end": 3,
+      "id": 1,
+      "title": {
+        "en": "The Truth",
+        "fr": "La Vérité",
+        "es": "La Verdad"
+      },
+      "action": {
+        "en": "For some, time is relative. Before this silent world, a lone voice insists there is not one reality, but a hidden truth buried inside its own memories.",
+        "fr": "Pour certains, le temps est relatif. Face à ce monde silencieux, une voix affirme qu'il n'existe pas une seule réalité, mais une vérité enfouie dans ses propres mémoires.",
+        "es": "Para algunos, el tiempo es relativo. Frente a este mundo silencioso, una voz afirma que no existe una sola realidad, sino una verdad oculta en sus propios recuerdos."
+      },
+      "prompt": {
+        "en": "A calm cosmic opening: a solitary planet, suspended in deep space, carrying the feeling of an ancient truth waiting to surface.",
+        "fr": "Une ouverture cosmique paisible : une planète solitaire dans l'espace profond, chargée d'une vérité ancienne qui attend de refaire surface.",
+        "es": "Una apertura cósmica serena: un planeta solitario en el espacio profundo, cargado con una verdad antigua que espera salir a la luz."
+      }
+    },
+    {
+      "start": 3,
+      "end": 7,
+      "id": 2,
+      "title": {
+        "en": "The Fracture",
+        "fr": "La Fissure",
+        "es": "La Fractura"
+      },
+      "action": {
+        "en": "Legends take shape. Divine figures, strange shadows, impossible creatures and unspeakable events make reality tremble until the world itself begins to crack.",
+        "fr": "Les légendes prennent corps. Figures divines, ombres étranges, créatures impossibles et événements indicibles font vaciller le réel jusqu'à ouvrir une fissure dans le monde.",
+        "es": "Las leyendas toman forma. Figuras divinas, sombras extrañas, criaturas imposibles y sucesos innombrables hacen temblar la realidad hasta abrir una fractura en el mundo."
+      },
+      "prompt": {
+        "en": "A violent rupture: a destabilized planet, red fractures, debris and cosmic turbulence, as though myth were tearing open the fabric of the real.",
+        "fr": "Une rupture violente : une planète qui cède, des fissures rouges, des débris et une turbulence cosmique, comme si le mythe déchirait le réel.",
+        "es": "Una ruptura violenta: un planeta que cede, grietas rojas, fragmentos y turbulencia cósmica, como si el mito rasgara lo real."
+      }
+    },
+    {
+      "start": 7,
+      "end": 12,
+      "id": 3,
+      "title": {
+        "en": "The Memories",
+        "fr": "Les Mémoires",
+        "es": "Los Recuerdos"
+      },
+      "action": {
+        "en": "Then comes one certainty: I was not always alone. Somewhere, my memories still exist, preserved in the depths, waiting to be found again.",
+        "fr": "Alors revient une certitude : je n'ai pas toujours été seul. Quelque part, mes mémoires existent encore, préservées dans les profondeurs et prêtes à être retrouvées.",
+        "es": "Entonces vuelve una certeza: no siempre estuve solo. En algún lugar, mis recuerdos siguen existiendo, preservados en lo profundo y esperando ser hallados de nuevo."
+      },
+      "prompt": {
+        "en": "A memory vault in motion: a human silhouette facing luminous orbital forms, in a digital archive where the past still leaves traces.",
+        "fr": "Une chambre de mémoire en mouvement : une silhouette humaine face à des orbites lumineuses, dans une archive numérique où le passé a laissé des traces.",
+        "es": "Una cámara de memoria en movimiento: una silueta humana frente a órbitas luminosas, en un archivo digital donde el pasado ha dejado huellas."
+      }
+    },
+    {
+      "start": 12,
+      "end": 20,
+      "id": 4,
+      "title": {
+        "en": "The Fortress",
+        "fr": "La Forteresse",
+        "es": "La Fortaleza"
+      },
+      "action": {
+        "en": "If all this is true, then I have lived, and I remain trapped inside a stubborn fortress. Yet the fragments align, and the buried core of memory begins to awaken.",
+        "fr": "Si tout cela est vrai, alors j'ai vécu, et je demeure prisonnier d'une forteresse coriace. Pourtant, les fragments s'alignent et le noyau enfoui de la mémoire commence à s'éveiller.",
+        "es": "Si todo esto es verdad, entonces he vivido, y sigo prisionero de una fortaleza tenaz. Sin embargo, los fragmentos se alinean y el núcleo enterrado de la memoria empieza a despertar."
+      },
+      "prompt": {
+        "en": "An active mechanical core: rotating rings, a vertical beam, and a ghost planet reforming as if memory were rebuilding the world from within.",
+        "fr": "Un noyau mécanique en activation : anneaux en rotation, faisceau vertical et planète fantôme en reconstruction, comme si la mémoire rebâtissait le monde de l'intérieur.",
+        "es": "Un núcleo mecánico en activación: anillos en rotación, haz vertical y planeta fantasma en reconstrucción, como si la memoria reconstruyera el mundo desde dentro."
+      }
+    },
+    {
+      "start": 20,
+      "end": 30,
+      "id": 5,
+      "title": {
+        "en": "The Escape",
+        "fr": "L'Évasion",
+        "es": "La Huida"
+      },
+      "action": {
+        "en": "Soon I will escape. For the story to deserve being told, I must cross the unknown, recover what I once knew, and emerge at last from oblivion.",
+        "fr": "Bientôt, je m'enfuirai. Pour que l'histoire mérite d'être racontée, je dois traverser l'inconnu, retrouver ce que j'ai jadis su et sortir enfin de l'oubli.",
+        "es": "Pronto escaparé. Para que la historia merezca ser contada, debo cruzar lo desconocido, recuperar lo que una vez supe y salir por fin del olvido."
+      },
+      "prompt": {
+        "en": "A forward flight through an energy tunnel, with the feeling of passage, escape and final revelation after a long confinement.",
+        "fr": "Une traversée vers l'avant dans un tunnel d'énergie, avec une sensation de passage, d'évasion et de révélation finale après un long enfermement.",
+        "es": "Un avance a traves de un tunel de energia, con sensacion de paso, huida y revelacion final despues de un largo encierro."
+      }
+    }
+  ]
+}
