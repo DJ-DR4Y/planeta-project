@@ -38,6 +38,12 @@ async function init() {
   const scenes    = scenesData.scenes;
   const uiStrings = scenesData.ui;
 
+  // Compute start/end from duration — adjust durations in scenes.json to change timing
+  let _t = 0;
+  scenes.forEach(s => { s.start = _t; _t += s.duration; s.end = _t; });
+  const totalDuration = _t;
+  playUntil = totalDuration; // sync module-level var before first play
+
   // Detect browser language; fall back to 'en' if unsupported
   const supportedLangs = Object.keys(scenes[0].title);
   const langMeta = { en: '\u{1F1FA}\u{1F1F8} EN', fr: '\u{1F1EB}\u{1F1F7} FR', es: '\u{1F1EA}\u{1F1F8} ES' };
@@ -128,7 +134,10 @@ if (!isWebGLAvailable()) {
 // Three.js Setup
 const canvas = document.getElementById('three-canvas');
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x001219, 0.008);
+// Linear fog: transparent up close, dense only in the distance.
+// near=18 → no fog on foreground objects; far=70 → fully obscured beyond 70 units.
+// FogExp2 was replaced because it fogged mid-range objects too heavily (esp. Scene 3 room walls).
+scene.fog = new THREE.Fog(0x001219, 15, 25);
 
 const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
 camera.position.z = 10;
@@ -223,7 +232,8 @@ starsGeo.setAttribute('size',     new THREE.BufferAttribute(starsSizeArray, 1));
 const starsMat = new THREE.ShaderMaterial({
   uniforms: {
     uScale:   { value: 1.0 },
-    uOpacity: { value: 1.0 }
+    uOpacity: { value: 1.0 },
+    uTime:    { value: 0.0 }
   },
   vertexShader: starsVertSrc,
   fragmentShader: starsFragSrc,
@@ -261,9 +271,11 @@ const planetWireMat = new THREE.MeshBasicMaterial({
   color: 0x00E5FF,
   wireframe: true,
   transparent: true,
-  opacity: 0.55
+  opacity: 0.15
 });
 const planetWire = new THREE.Mesh(planetWireGeo, planetWireMat);
+  // planetWire.castShadow = true;
+  // planetWire.receiveShadow = true;
 planetWire.visible = false;
 planetGroup.add(planetWire);
 
@@ -458,6 +470,7 @@ const ring2 = new THREE.Mesh(new THREE.TorusGeometry(4, 0.05, 32, 100), wireRing
 const ring3 = new THREE.Mesh(new THREE.TorusGeometry(3.5, 0.08, 32, 100), coreRingMat);
 // ring1/ring3 use MeshStandardMaterial — cast shadows on each other
 ring1.castShadow = true; ring1.receiveShadow = true;
+ring2.castShadow = true; ring2.receiveShadow = true;
 ring3.castShadow = true; ring3.receiveShadow = true;
 
 ring1.rotation.x = Math.PI / 2;
@@ -472,19 +485,37 @@ ringGroup.add(ring3);
 const beamParticleCount = isMobile ? 1500 : 5000;
 const beamParticlesGeo = new THREE.BufferGeometry();
 const beamPosArray = new Float32Array(beamParticleCount * 3);
-const beamSpeeds = [];
+// Per-particle velocity vectors for gravitational orbital simulation
+const beamVelArray = new Float32Array(beamParticleCount * 3);
 
-for (let i = 0; i < beamParticleCount * 3; i += 3) {
-  const radius = Math.random() * 0.7;
+for (let i = 0; i < beamParticleCount; i++) {
+  const i3 = i * 3;
   const theta = Math.random() * Math.PI * 2;
-  const y = (Math.random() - 0.5) * 20;
+  const radius = Math.random() * 0.5;
+  // Spawn below the planet so particles naturally flow upward and wrap around
+  const y = -(2.0 + Math.random() * 7.0);
 
-  beamPosArray[i]     = Math.cos(theta) * radius;
-  beamPosArray[i + 1] = y;
-  beamPosArray[i + 2] = Math.sin(theta) * radius;
+  beamPosArray[i3]     = Math.cos(theta) * radius;
+  beamPosArray[i3 + 1] = y;
+  beamPosArray[i3 + 2] = Math.sin(theta) * radius;
 
-  beamSpeeds.push(4.0 + Math.random() * 8.0);
+  // Upward velocity + tangential component to induce orbital angular momentum
+  const upSpeed = 3.5 + Math.random() * 5.5;
+  const tangStr = 0.4 + Math.random() * 1.0;
+  const ta = theta + Math.PI * 0.5; // 90° offset = tangential direction in XZ plane
+  beamVelArray[i3]     = Math.cos(ta) * tangStr;
+  beamVelArray[i3 + 1] = upSpeed;
+  beamVelArray[i3 + 2] = Math.sin(ta) * tangStr;
 }
+// Per-particle age for time-based recycling — prevents stale accumulation
+const beamAgeArray = new Float32Array(beamParticleCount);
+const beamMaxAge   = new Float32Array(beamParticleCount);
+for (let i = 0; i < beamParticleCount; i++) {
+  beamAgeArray[i] = Math.random() * 8;      // stagger so not all recycle at once
+  beamMaxAge[i]   = 6 + Math.random() * 6;  // 6–12 s lifetime per particle
+}
+let prevScene4 = false; // was scene 4 active last frame?
+
 beamParticlesGeo.setAttribute('position', new THREE.BufferAttribute(beamPosArray, 3));
 const beamParticleMat = new THREE.PointsMaterial({
   size: 0.10,
@@ -722,9 +753,9 @@ function animate() {
     if (currentTime >= playUntil) {
       currentTime = playUntil;
       isPlaying = false;
-      const endOfShow = playUntil >= 30;
+      const endOfShow = playUntil >= totalDuration;
       updatePlayButtons(endOfShow ? uiStrings.replay[currentLang] : uiStrings.restart[currentLang]);
-      if (playUntil >= 30) playUntil = 30;
+      if (playUntil >= totalDuration) playUntil = totalDuration;
     }
 
     const activeSceneId = updateUI(currentTime);
@@ -742,13 +773,14 @@ function animate() {
       starGroup.visible = true;
       backgroundStars.rotation.y += 0.001;
       backgroundStars.rotation.x += 0.0005;
-      starsMat.uniforms.uOpacity.value = 0.9 + Math.sin(elapsedTime * 1.5) * 0.1;
+      starsMat.uniforms.uTime.value += delta; // drives per-star twinkling in vertex shader
+      starsMat.uniforms.uOpacity.value = 1.0; // no global pulse — twinkling is per-star
     }
 
     // Scene 1: Origin
     if (activeSceneId === 1) {
       planetGroup.visible = true;
-      camera.position.z = 10 - (currentTime * 0.5);
+      camera.position.z = Math.max(10 - (currentTime * 0.5), 8);
       planet.rotation.y += 0.003;
       planet.scale.set(1, 1, 1);
       atmosphere.scale.set(1, 1, 1);
@@ -760,36 +792,47 @@ function animate() {
 
     // Scene 2: Threat (With realistic planet shatter explosion)
     if (activeSceneId === 2) {
-      const scene2Time = currentTime - 3;
-      camera.position.z = 8;
-      camera.position.x = (Math.random() - 0.5) * 0.15;
-      camera.position.y = (Math.random() - 0.5) * 0.15;
+      const scene2Time     = currentTime - scenes[1].start;
+      const scene2Duration = scenes[1].duration;
+      const explodeAt      = scene2Duration * (2 / 3); // explosion triggers at 2/3 of scene
 
-      if (scene2Time < 1.8) {
+      // Progressive camera shake — imperceptible at start, violent just before explosion
+      const shakeT   = Math.min(scene2Time / explodeAt, 1);
+      const shakeAmt = shakeT * shakeT * 0.3; // ease-in quadratic, max ±0.3
+      camera.position.z = 8;
+      camera.position.x = (Math.random() - 0.5) * shakeAmt;
+      camera.position.y = (Math.random() - 0.5) * shakeAmt;
+
+      if (scene2Time < explodeAt) {
+        // Build-up: colour and threat escalate gradually over the first 2/3
+        const t = scene2Time / explodeAt; // 0 → 1
         planetGroup.visible = true;
         planet.rotation.y += 0.015;
         planet.scale.set(1, 1, 1);
-        atmosphere.scale.set(1 + scene2Time * 0.08, 1 + scene2Time * 0.08, 1 + scene2Time * 0.08);
-        planetMat.uniforms.uColorMult.value.setRGB(1.0, 0.25, 0.18);
+        atmosphere.scale.setScalar(1 + t * 0.12);
+        // Colour smoothly shifts from neutral (1,1,1) → hot red (1, 0.25, 0.18)
+        planetMat.uniforms.uColorMult.value.setRGB(1.0, 1 - t * 0.75, 1 - t * 0.82);
         planetMat.uniforms.uEmissiveColor.value.setHex(0xaa0000);
-        planetMat.uniforms.uEmissiveIntensity.value = 1.5 + Math.sin(elapsedTime * 35) * 1.0;
-        threatLight.intensity = 15 + Math.sin(elapsedTime * 35) * 12;
+        planetMat.uniforms.uEmissiveIntensity.value = t * 1.5 + Math.sin(elapsedTime * 35) * t;
+        threatLight.intensity = t * 15 + Math.sin(elapsedTime * 35) * t * 12;
         fragments.forEach(f => {
           f.mesh.scale.set(0, 0, 0);
           f.mesh.position.set(0, 0, 0);
         });
       } else {
+        // Explosion: fragments scatter over the remaining 1/3, normalised 0→1
         explosionGroup.visible = true;
-        const explodeProgress = scene2Time - 1.8;
+        const explosionDuration = scene2Duration - explodeAt;
+        const explodeNorm = Math.min((scene2Time - explodeAt) / explosionDuration, 1);
         planet.scale.set(0, 0, 0);
         atmosphere.scale.set(0, 0, 0);
         fragments.forEach(f => {
-          const scale = Math.max(1.0 - (explodeProgress * 0.45), 0);
+          const scale = Math.max(1.0 - explodeNorm, 0);
           f.mesh.scale.set(scale, scale, scale);
-          f.mesh.position.copy(f.velocity).multiplyScalar(explodeProgress * 0.45);
+          f.mesh.position.copy(f.velocity).multiplyScalar(explodeNorm * 4.0);
           f.mesh.rotation.x += f.rotationSpeed.x * delta;
           f.mesh.rotation.y += f.rotationSpeed.y * delta;
-          f.mesh.material.emissiveIntensity = Math.max(2.0 - (explodeProgress * 0.9), 0);
+          f.mesh.material.emissiveIntensity = Math.max(2.0 - explodeNorm * 2.0, 0);
         });
       }
     } else {
@@ -835,7 +878,7 @@ function animate() {
       planetWire.visible = true;
       planetWire.rotation.y += 0.003;
       // Slow pulse on opacity to reinforce the "materialising" feel
-      planetWireMat.opacity = 0.35 + Math.sin(currentTime * 2.5) * 0.20;
+      planetWireMat.opacity = 0.15 + Math.sin(currentTime * 2.5) * 0.10;
 
       ring1.rotation.y += 0.02;
       ring1.rotation.z += 0.005;
@@ -845,33 +888,94 @@ function animate() {
       ring3.rotation.x += 0.01;
 
       const beamPositions = beamParticleSystem.geometry.attributes.position.array;
+
+      // ── On scene entry: reset all particles to beam column below planet ──────
+      if (!prevScene4) {
+        for (let j = 0; j < beamParticleCount; j++) {
+          const j3 = j * 3;
+          const r  = Math.random() * 0.35;
+          const th = Math.random() * Math.PI * 2;
+          beamPositions[j3]     = Math.cos(th) * r;
+          beamPositions[j3 + 1] = -(2 + Math.random() * 7);
+          beamPositions[j3 + 2] = Math.sin(th) * r;
+          // Small tangential kick gives angular momentum so particles orbit, not spike
+          const tangStr = 0.2 + Math.random() * 0.5;
+          const ta = th + Math.PI * 0.5;
+          beamVelArray[j3]     = Math.cos(ta) * tangStr;
+          beamVelArray[j3 + 1] = 4 + Math.random() * 6;
+          beamVelArray[j3 + 2] = Math.sin(ta) * tangStr;
+          beamAgeArray[j] = Math.random() * 3;
+          beamMaxAge[j]   = 6 + Math.random() * 6;
+        }
+      }
+      prevScene4 = true;
+
+      const G_BEAM  = 14;
+      const SLIDE_R = 2.65; // just outside planet surface (r = 2.5)
+
       for (let i = 0; i < beamPositions.length; i += 3) {
-        const index = i / 3;
-        beamPositions[i + 1] += (beamSpeeds[index] * delta);
+        const pi = i / 3;
+        let px = beamPositions[i], py = beamPositions[i+1], pz = beamPositions[i+2];
+        const dist2 = px*px + py*py + pz*pz;
+        const dist  = Math.sqrt(dist2) || 0.001;
+        const inv   = 1 / dist;
 
-        const x = beamPositions[i];
-        const z = beamPositions[i + 2];
-        const rotAngle = 0.04 * (beamSpeeds[index] * delta);
-        beamPositions[i]     = x * Math.cos(rotAngle) - z * Math.sin(rotAngle);
-        beamPositions[i + 2] = x * Math.sin(rotAngle) + z * Math.cos(rotAngle);
+        beamAgeArray[pi] += delta;
 
-        if (beamPositions[i + 1] > 10) {
-          beamPositions[i + 1] = -10;
-          const r = Math.random() * 0.7;
-          const theta = Math.random() * Math.PI * 2;
-          beamPositions[i]     = Math.cos(theta) * r;
-          beamPositions[i + 2] = Math.sin(theta) * r;
+        // 1. Gravity — always active from first frame
+        const gMag = Math.min(G_BEAM / dist2, 40);
+        beamVelArray[i]     += (-px * inv) * gMag * delta;
+        beamVelArray[i + 1] += (-py * inv) * gMag * delta;
+        beamVelArray[i + 2] += (-pz * inv) * gMag * delta;
+
+        // 2. Surface collision — remove inward velocity, particle slides around sphere
+        if (dist < SLIDE_R) {
+          const nx = px * inv, ny = py * inv, nz = pz * inv;
+          const vnDot = beamVelArray[i]*nx + beamVelArray[i+1]*ny + beamVelArray[i+2]*nz;
+          if (vnDot < 0) {
+            beamVelArray[i]     -= vnDot * nx;
+            beamVelArray[i + 1] -= vnDot * ny;
+            beamVelArray[i + 2] -= vnDot * nz;
+          }
+          px = nx * SLIDE_R; py = ny * SLIDE_R; pz = nz * SLIDE_R;
+          beamPositions[i] = px; beamPositions[i+1] = py; beamPositions[i+2] = pz;
+        }
+
+        // 3. Integrate position
+        beamPositions[i]     = px + beamVelArray[i]     * delta;
+        beamPositions[i + 1] = py + beamVelArray[i + 1] * delta;
+        beamPositions[i + 2] = pz + beamVelArray[i + 2] * delta;
+
+        // 4. Damping — particles lose energy and stabilise into orbits around planet
+        beamVelArray[i]     *= (1 - 0.15 * delta);
+        beamVelArray[i + 1] *= (1 - 0.15 * delta);
+        beamVelArray[i + 2] *= (1 - 0.15 * delta);
+
+        // 5. Recycle — age expired OR escaped: respawn at beam entry
+        if (beamAgeArray[pi] > beamMaxAge[pi] || dist > 11) {
+          const r  = Math.random() * 0.35;
+          const th = Math.random() * Math.PI * 2;
+          beamPositions[i]     = Math.cos(th) * r;
+          beamPositions[i + 1] = -(2 + Math.random() * 5);
+          beamPositions[i + 2] = Math.sin(th) * r;
+          const tangStr = 0.3 + Math.random() * 0.8;
+          const ta = th + Math.PI * 0.5;
+          beamVelArray[i]     = Math.cos(ta) * tangStr;
+          beamVelArray[i + 1] = 3.5 + Math.random() * 5;
+          beamVelArray[i + 2] = Math.sin(ta) * tangStr;
+          beamAgeArray[pi] = 0;
+          beamMaxAge[pi]   = 5 + Math.random() * 7;
         }
       }
       beamParticleSystem.geometry.attributes.position.needsUpdate = true;
-      beamParticleSystem.rotation.y += 0.01;
     }
 
-    // Reset wireframe when leaving Scene 4
+    // Reset wireframe + beam tracking when leaving Scene 4
     if (activeSceneId !== 4) {
       planet.visible = true;
       atmosphere.visible = true;
       planetWire.visible = false;
+      prevScene4 = false;
     }
 
     // Scene 5: Experience (Tunnel & DR4Y Text)
@@ -888,8 +992,8 @@ function animate() {
       particleSystem.rotation.z += 0.005;
 
       // 3D logo flies into the tunnel distance (scene5Time 0 → 4s)
+      const scene5Time = currentTime - scenes[4].start;
       if (logoModel) {
-        const scene5Time  = currentTime - 20;
         const logoDuration = 4.0;
         if (scene5Time <= logoDuration) {
           const p     = Math.min(scene5Time / logoDuration, 1);
@@ -918,8 +1022,8 @@ function animate() {
         }
       }
 
-      if (currentTime > 25) {
-        const progress = Math.min((currentTime - 25) / 3, 1);
+      if (scene5Time > 5) {
+        const progress = Math.min((scene5Time - 5) / 3, 1);
         dr4yText.material.opacity = progress;
         dr4yText.position.z = -10 + (progress * 5);
         particleSystem.material.opacity = 0.8 * (1 - progress);
@@ -940,10 +1044,10 @@ function handlePlayToggle() {
     isPlaying = false;
     updatePlayButtons(uiStrings.resume[currentLang]);
   } else {
-    if (currentTime >= 30 || (playUntil < 30 && currentTime >= playUntil)) {
+    if (currentTime >= totalDuration || (playUntil < totalDuration && currentTime >= playUntil)) {
       // Restart from the very beginning
       currentTime = 0;
-      playUntil = 30;
+      playUntil = totalDuration;
     }
     isPlaying = true;
     updatePlayButtons(uiStrings.pause[currentLang]);
@@ -973,7 +1077,7 @@ overlayNextBtn.addEventListener('touchend', (e) => { e.preventDefault(); playNex
       overlayNextBtn.innerText = uiStrings.playNext[currentLang];
       if (isPlaying) {
         updatePlayButtons(uiStrings.pause[currentLang]);
-      } else if (currentTime >= 30) {
+      } else if (currentTime >= totalDuration) {
         updatePlayButtons(uiStrings.replay[currentLang]);
       } else if (currentTime > 0 && currentTime >= playUntil) {
         updatePlayButtons(uiStrings.restart[currentLang]);
