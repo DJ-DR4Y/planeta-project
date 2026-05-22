@@ -271,7 +271,7 @@ const planetWireMat = new THREE.MeshBasicMaterial({
   color: 0x00E5FF,
   wireframe: true,
   transparent: true,
-  opacity: 0.15
+  opacity: 0.25
 });
 const planetWire = new THREE.Mesh(planetWireGeo, planetWireMat);
   // planetWire.castShadow = true;
@@ -878,7 +878,7 @@ function animate() {
       planetWire.visible = true;
       planetWire.rotation.y += 0.003;
       // Slow pulse on opacity to reinforce the "materialising" feel
-      planetWireMat.opacity = 0.15 + Math.sin(currentTime * 2.5) * 0.10;
+      planetWireMat.opacity = 0.25 + Math.sin(currentTime * 2.5) * 0.15;
 
       ring1.rotation.y += 0.02;
       ring1.rotation.z += 0.005;
