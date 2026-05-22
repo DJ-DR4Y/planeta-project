@@ -10,3 +10,4 @@ Thumbs.db
 # Dev artifacts
 old_tests/
 prelude_text.md
+.vercel

@@ -894,9 +894,10 @@ function animate() {
         if (scene5Time <= logoDuration) {
           const p     = Math.min(scene5Time / logoDuration, 1);
           const eased = p * p; // ease-in: accelerates into distance
-          logoModel.visible  = true;
-          logoModel.position.z = 5.25 - eased * 24;          // -2 → -26
-          logoModel.position.y = -0.5 + Math.sin(scene5Time * -1.2) * 0.2;
+          logoModel.visible = true;
+          // logoModel.position.x = 0.5;  
+          logoModel.position.z = 4.5 - eased * 24;          // -2 → -26
+          logoModel.position.y = -0.125 + Math.sin(scene5Time * -0.4) * 0.4;
           // logoModel.position.y = -0.5 + Math.sin(scene5Time * -0.8) * 0.2;
           logoModel.scale.setScalar(logoBaseScale * Math.max(1 - eased * 0.94, 0.04));
           const opacity = p < 0.6 ? 1 : Math.max(1 - (p - 0.6) / 0.4, 0);
