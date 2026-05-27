@@ -715,7 +715,7 @@ function updateUI(time) {
   // Handle UI Glitch in Scene 2
   if (currentScene.id === 2) {
     timeDisplay.classList.add('ui-glitch');
-    sceneTitle.innerText = uiStrings.systemFailure[currentLang];
+    sceneTitle.innerText = `${currentScene.id}. ${uiStrings.systemFailure[currentLang]}`;
   } else {
     timeDisplay.classList.remove('ui-glitch');
   }
